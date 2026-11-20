@@ -97,45 +97,51 @@ float3 GetViewForwardDir()
 // Computes the world space view direction (pointing towards the viewer).
 float3 GetWorldSpaceViewDir(float3 positionWS)
 {
+    // Single return point with an initialized local: the GLES/D3D shader
+    // compilers flag early returns inside uniform-guarded branches as a
+    // potentially uninitialized return value.
+    float3 viewDir = float3(0.0, 0.0, 1.0);
     if (_YargHighwaysN > 0)
     {
-        return YargWorldSpaceCameraPos(positionWS).xyz - positionWS;
+        viewDir = YargWorldSpaceCameraPos(positionWS).xyz - positionWS;
     }
-
-    if (IsPerspectiveProjection())
+    else if (IsPerspectiveProjection())
     {
         // Perspective
-        return GetCurrentViewPosition() - positionWS;
+        viewDir = GetCurrentViewPosition() - positionWS;
     }
     else
     {
         // Orthographic
-        return -GetViewForwardDir();
+        viewDir = -GetViewForwardDir();
     }
+    return viewDir;
 }
 
 // Computes the object space view direction (pointing towards the viewer).
 half3 GetObjectSpaceNormalizeViewDir(float3 positionOS)
 {
+    // Single return point with an initialized local (see GetWorldSpaceViewDir).
+    half3 viewDir = half3(0.0, 0.0, 1.0);
     if (_YargHighwaysN > 0)
     {
         float3 positionWS = TransformObjectToWorld(positionOS);
         float3 cameraPosWS = YargWorldSpaceCameraPos(positionWS).xyz;
         float3 cameraPosOS = TransformWorldToObject(cameraPosWS);
-        return normalize(cameraPosOS - positionOS);
+        viewDir = normalize(cameraPosOS - positionOS);
     }
-
-    if (IsPerspectiveProjection())
+    else if (IsPerspectiveProjection())
     {
         // Perspective
         float3 V = TransformWorldToObject(GetCurrentViewPosition()) - positionOS;
-        return half3(normalize(V));
+        viewDir = half3(normalize(V));
     }
     else
     {
         // Orthographic
-        return half3(TransformWorldToObjectNormal(-GetViewForwardDir()));
+        viewDir = half3(TransformWorldToObjectNormal(-GetViewForwardDir()));
     }
+    return viewDir;
 }
 
 // UNITY_MATRIX_V defines a right-handed view space with the Z axis pointing towards the viewer.
@@ -556,23 +562,27 @@ float GetCurrentExposureMultiplier()
 
 half3 GetWorldSpaceNormalizeViewDir(float3 positionWS)
 {
+    // Single return point with an initialized local: the GLES/D3D shader
+    // compilers flag early returns inside uniform-guarded branches as a
+    // potentially uninitialized return value (build #4 failure).
+    half3 viewDir = half3(0.0, 0.0, 1.0);
     if (_YargHighwaysN > 0)
     {
         float3 V = YargWorldSpaceCameraPos(positionWS).xyz - positionWS;
-        return half3(normalize(V));
+        viewDir = half3(normalize(V));
     }
-
-    if (IsPerspectiveProjection())
+    else if (IsPerspectiveProjection())
     {
         // Perspective
         float3 V = GetCurrentViewPosition() - positionWS;
-        return half3(normalize(V));
+        viewDir = half3(normalize(V));
     }
     else
     {
         // Orthographic
-        return half3(-GetViewForwardDir());
+        viewDir = half3(-GetViewForwardDir());
     }
+    return viewDir;
 }
 
 #endif // UNITY_SHADER_VARIABLES_FUNCTIONS_INCLUDED

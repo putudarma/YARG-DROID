@@ -4,23 +4,27 @@
 // Define our custom implementations
 half3 YargGetWorldSpaceNormalizeViewDir(float3 positionWS)
 {
+    // Single return point with an initialized local: the GLES/D3D shader
+    // compilers flag early returns inside uniform-guarded branches as a
+    // potentially uninitialized return value (build #4 failure).
+    half3 viewDir = half3(0.0, 0.0, 1.0);
     if (_YargHighwaysN > 0)
     {
         float3 V = YargWorldSpaceCameraPos(positionWS).xyz - positionWS;
-        return half3(normalize(V));
+        viewDir = half3(normalize(V));
     }
-
-    if (IsPerspectiveProjection())
+    else if (IsPerspectiveProjection())
     {
         // Perspective
         float3 V = GetCurrentViewPosition() - positionWS;
-        return half3(normalize(V));
+        viewDir = half3(normalize(V));
     }
     else
     {
         // Orthographic
-        return half3(-GetViewForwardDir());
+        viewDir = half3(-GetViewForwardDir());
     }
+    return viewDir;
 }
 
 VertexPositionInputs YargGetVertexPositionInputs(float3 positionOS)

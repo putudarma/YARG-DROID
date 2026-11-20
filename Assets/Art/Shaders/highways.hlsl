@@ -64,14 +64,17 @@ inline float3 YargTransformWorldToView(float3 positionWS)
 // Computes world space view direction, from object space position
 inline float3 YargWorldSpaceViewDir(float4 localPos)
 {
+    // Single return point with an initialized local (see GetWorldSpaceViewDir).
+    float3 viewDir = float3(0.0, 0.0, 1.0);
     if (_YargHighwaysN > 0)
     {
         float3 worldPos = mul(unity_ObjectToWorld, localPos).xyz;
-        return YargWorldSpaceCameraPos(worldPos).xyz - worldPos;
+        viewDir = YargWorldSpaceCameraPos(worldPos).xyz - worldPos;
 
     } else {
-        return WorldSpaceViewDir(localPos);
+        viewDir = WorldSpaceViewDir(localPos);
     }
+    return viewDir;
 }
 #endif
 
