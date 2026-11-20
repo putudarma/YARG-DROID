@@ -90,7 +90,7 @@ half3 ColorBlend(half3 original, half3 scanline, float t)
 
     // Custom blending formula - you can modify this as needed
     // This version creates a more intense effect in the midtones
-    half4 result;
+    half3 result;
     result.r = brightened.r * (1.0 - easedT) + scanline.r * easedT;
     result.g = brightened.g * (1.0 - easedT) + scanline.g * easedT;
     result.b = brightened.b * (1.0 - easedT) + scanline.b * easedT;
@@ -104,7 +104,7 @@ half3 YargScanlines(half3 col, float2 uv)
     // Calculate scanline effect
     float scanline = frac(uv.y * _YargScanlineSize);
     // Apply scanline color
-    col = ColorBlend(col, _YargScanlineColor, scanline);
+    col = ColorBlend(col, _YargScanlineColor.rgb, scanline);
 
     return col;
 }
@@ -133,7 +133,7 @@ half4 YargVenuePP(half3 col, float2 uvDistorted, float2 uv)
 
     if(_YargTrailLength > 0)
     {
-        half3 prevCol = SAMPLE_TEXTURE2D(_YargPrevFrame, sampler_LinearClamp, uv);
+        half3 prevCol = SAMPLE_TEXTURE2D(_YargPrevFrame, sampler_LinearClamp, uv).rgb;
         half luma = dot(prevCol, half3(0.2126, 0.7152, 0.0722));
         half mask = step(0.15, luma);
         col = max(col, prevCol * (mask - _YargTrailLength / 2));
