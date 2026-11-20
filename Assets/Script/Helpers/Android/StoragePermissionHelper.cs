@@ -64,33 +64,67 @@ namespace YARG.Helpers
 
         /// <summary>
         /// Opens the system "All files access" page for this app. Returns
-        /// immediately — the user grants (or declines) there and comes back
-        /// to the game. Never throws.
+        /// true if a settings page was actually launched, false if no page
+        /// could be opened (so the caller can retry later instead of
+        /// assuming the user saw it). Never throws.
         /// </summary>
-        public static void PromptAllFilesAccess()
+        public static bool PromptAllFilesAccess()
         {
             if (!IsAllFilesAccessSupported())
             {
-                return;
+                return false;
             }
 
+            // First try the app-specific page (it opens straight onto this
+            // app's toggle). Some OEM ROMs do not resolve that intent, so
+            // fall back to the general "All files access" list page.
+            if (LaunchAllFilesAccessPage(
+                "android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION",
+                "package:" + Application.identifier))
+            {
+                return true;
+            }
+
+            Debug.LogWarning("[StoragePermissionHelper] App-specific all-files page did not open; trying the general list page.");
+            return LaunchAllFilesAccessPage(
+                "android.settings.MANAGE_ALL_FILES_ACCESS_PERMISSION",
+                null);
+        }
+
+        private static bool LaunchAllFilesAccessPage(string action, string uri)
+        {
             try
             {
                 using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
                 using (var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
-                using (var intent = new AndroidJavaObject(
-                    "android.content.Intent",
-                    "android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION",
-                    new AndroidJavaClass("android.net.Uri")
-                        .CallStatic<AndroidJavaObject>("parse", "package:" + Application.identifier)))
                 {
-                    Debug.Log("[StoragePermissionHelper] Prompting for all-files access.");
-                    activity.Call("startActivity", intent);
+                    AndroidJavaObject intent;
+                    if (uri == null)
+                    {
+                        intent = new AndroidJavaObject("android.content.Intent", action);
+                    }
+                    else
+                    {
+                        intent = new AndroidJavaObject(
+                            "android.content.Intent",
+                            action,
+                            new AndroidJavaClass("android.net.Uri")
+                                .CallStatic<AndroidJavaObject>("parse", uri));
+                    }
+
+                    using (intent)
+                    {
+                        Debug.Log("[StoragePermissionHelper] Prompting for all-files access (" + action + ").");
+                        activity.Call("startActivity", intent);
+                    }
                 }
+
+                return true;
             }
             catch (Exception e)
             {
-                Debug.LogWarning("[StoragePermissionHelper] PromptAllFilesAccess() failed: " + e.Message);
+                Debug.LogWarning("[StoragePermissionHelper] Could not open all-files page (" + action + "): " + e.Message);
+                return false;
             }
         }
     }

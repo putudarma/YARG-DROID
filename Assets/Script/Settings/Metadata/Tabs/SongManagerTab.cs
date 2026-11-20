@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.AddressableAssets;
+using YARG.Helpers;
 using YARG.Menu.Navigation;
 using YARG.Menu.Settings;
 
@@ -39,6 +40,21 @@ namespace YARG.Settings.Metadata
                 var go = Object.Instantiate(_songManagerDirectory, settingContainer);
                 go.GetComponent<SettingsDirectory>().SetIndex(i);
             }
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+            // If all-files access was never granted (the first-run prompt was
+            // missed or failed to open), offer it again when the user opens
+            // the song-folders tab — this is when they need it, and it is
+            // the one place the prompt can be re-triggered without a reinstall.
+            try
+            {
+                SongFolderHelper.PromptAllFilesAccessOnce();
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogException(e);
+            }
+#endif
 
             // Build the rest of the metadata
             base.BuildSettingTab(settingContainer, navGroup);

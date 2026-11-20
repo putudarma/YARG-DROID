@@ -23,7 +23,13 @@ namespace YARG.Helpers
     /// </summary>
     public static class SongFolderHelper
     {
-        private const string PromptMarkerFileName = "allFilesAccessPrompted.txt";
+        // v2: the v1 marker ("allFilesAccessPrompted.txt") was written even
+        // when the prompt failed to open, which permanently suppressed all
+        // retries for that install — including after a reinstall-over that
+        // preserves app data. The v2 marker is only written when a settings
+        // page was actually launched, so a failed prompt retries next launch
+        // and the v1-poisoned state is ignored.
+        private const string PromptMarkerFileName = "allFilesAccessPrompted2.txt";
 
         /// <summary>
         /// Internal storage root, e.g. /storage/emulated/0. Derived from the
@@ -94,7 +100,13 @@ namespace YARG.Helpers
             AddFolder(FallbackSongsFolder);
         }
 
-        private static void PromptAllFilesAccessOnce()
+        /// <summary>
+        /// Asks for all-files access at most once per install (the marker is
+        /// only written when a settings page was actually launched, so a
+        /// failed or missed prompt retries on the next launch). Safe to call
+        /// from anywhere (first run, or the song-folders settings tab).
+        /// </summary>
+        public static void PromptAllFilesAccessOnce()
         {
             if (!StoragePermissionHelper.IsAllFilesAccessSupported())
             {
@@ -112,7 +124,14 @@ namespace YARG.Helpers
                 return;
             }
 
-            StoragePermissionHelper.PromptAllFilesAccess();
+            // Only remember the prompt when a page actually opened. If the
+            // intent failed (OEM ROM, activity not ready), no marker is
+            // written, so the next launch — or opening the song-folders tab —
+            // tries again instead of staying silent forever.
+            if (!StoragePermissionHelper.PromptAllFilesAccess())
+            {
+                return;
+            }
 
             try
             {
