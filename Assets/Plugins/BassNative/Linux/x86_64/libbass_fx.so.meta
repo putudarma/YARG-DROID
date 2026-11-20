@@ -22,6 +22,12 @@ PluginImporter:
         Exclude Win: 0
         Exclude Win64: 0
   - first:
+      Android: Android
+    second:
+      enabled: 0
+      settings:
+        CPU: ARM64
+  - first:
       Any: 
     second:
       enabled: 1
