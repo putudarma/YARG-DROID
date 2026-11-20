@@ -129,7 +129,7 @@ Shader "YargParticlesUnlit"
             // -------------------------------------
             // Includes
             #include_with_pragmas "Assets/Art/Shaders/YargParticlesUnlitInput.hlsl"
-            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/Shaders/Particles/ParticlesUnlitForwardPass.hlsl"
+            #include_with_pragmas "Assets/Art/Shaders/URP/ParticlesUnlitForwardPass.hlsl"
 
             ENDHLSL
         }
@@ -261,7 +261,7 @@ Shader "YargParticlesUnlit"
             // -------------------------------------
             // Includes
             #include_with_pragmas "Assets/Art/Shaders/YargParticlesUnlitInput.hlsl"
-            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/Shaders/Particles/ParticlesEditorPass.hlsl"
+            #include_with_pragmas "Assets/Art/Shaders/URP/ParticlesEditorPass.hlsl"
 
             ENDHLSL
         }
@@ -306,7 +306,7 @@ Shader "YargParticlesUnlit"
             // -------------------------------------
             // Includes
             #include_with_pragmas "Assets/Art/Shaders/YargParticlesUnlitInput.hlsl"
-            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/Shaders/Particles/ParticlesEditorPass.hlsl"
+            #include_with_pragmas "Assets/Art/Shaders/URP/ParticlesEditorPass.hlsl"
 
             ENDHLSL
         }

@@ -5,6 +5,6 @@
 
 #include "Assets/Art/Shaders/ShaderVariablesFunctions.hlsl"
 
-#include "Packages/com.unity.render-pipelines.universal/Shaders/Particles/ParticlesLitInput.hlsl"
+#include "Assets/Art/Shaders/URP/ParticlesLitInput.hlsl"
 
 #endif

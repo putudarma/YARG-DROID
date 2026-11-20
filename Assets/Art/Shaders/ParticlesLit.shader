@@ -165,7 +165,7 @@ Shader "YargParticlesLit"
             // -------------------------------------
             // Includes
             #include "Assets/Art/Shaders/YargParticlesLitInput.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/Shaders/Particles/ParticlesLitForwardPass.hlsl"
+            #include "Assets/Art/Shaders/URP/ParticlesLitForwardPass.hlsl"
             ENDHLSL
         }
 
@@ -365,7 +365,7 @@ Shader "YargParticlesLit"
             // -------------------------------------
             // Includes
             #include "Assets/Art/Shaders/YargParticlesLitInput.hlsl"
-            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/Shaders/Particles/ParticlesEditorPass.hlsl"
+            #include_with_pragmas "Assets/Art/Shaders/URP/ParticlesEditorPass.hlsl"
 
             ENDHLSL
         }
@@ -410,7 +410,7 @@ Shader "YargParticlesLit"
             // -------------------------------------
             // Includes
             #include "Assets/Art/Shaders/YargParticlesLitInput.hlsl"
-            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/Shaders/Particles/ParticlesEditorPass.hlsl"
+            #include_with_pragmas "Assets/Art/Shaders/URP/ParticlesEditorPass.hlsl"
 
             ENDHLSL
         }
