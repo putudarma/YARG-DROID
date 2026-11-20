@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>Melanchall.DryWetMidi.Nativeless</id>
+    <version>7.0.0</version>
+    <authors>melanchall</authors>
+    <license type="expression">MIT</license>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <icon>icon-nativeless.png</icon>
+    <projectUrl>https://github.com/melanchall/drywetmidi</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/melanchall/drywetmidi/master/Resources/NuGet/icon-nativeless.png</iconUrl>
+    <description>This is the nativeless version of the Melanchall.DryWetMidi package. Please read https://melanchall.github.io/drywetmidi/articles/dev/Nativeless-package.html to learn more.</description>
+    <releaseNotes>https://github.com/melanchall/drywetmidi/releases/tag/v7.0.0</releaseNotes>
+    <copyright>Copyright © Melanchall 2023</copyright>
+    <tags>midi smf music composing notes chords device playback record</tags>
+    <repository type="git" url="https://github.com/melanchall/drywetmidi" branch="master" commit="de3e6d6b7f9b498e6983a40cf2c30d05e812b04c" />
+    <dependencies>
+      <group targetFramework=".NETFramework4.5" />
+      <group targetFramework=".NETStandard2.0" />
+    </dependencies>
+  </metadata>
+</package>
