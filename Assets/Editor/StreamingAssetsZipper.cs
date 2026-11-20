@@ -69,7 +69,7 @@ public class StreamingAssetsZipper : IPreprocessBuildWithReport, IPostprocessBui
                     {
                         continue;
                     }
-                    zip.CreateEntryFromFile(file, GetRelativePath(streamingAssetsDir, file), CompressionLevel.Optimal);
+                    zip.CreateEntryFromFile(file, GetRelativePath(streamingAssetsDir, file), System.IO.Compression.CompressionLevel.Optimal);
                 }
             }
 
