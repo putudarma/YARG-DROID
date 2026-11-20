@@ -7553,8 +7553,8 @@
     "m_Hidden": false,
     "m_ShaderOutputName": "_Mask_Fade_Distance",
     "m_StageCapability": 3,
-    "m_Value": 0.0,
-    "m_DefaultValue": 0.0,
+    "m_Value": 0.05,
+    "m_DefaultValue": 0.05,
     "m_Labels": []
 }
 
