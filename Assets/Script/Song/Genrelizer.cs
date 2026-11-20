@@ -389,6 +389,12 @@ namespace YARG.Song
                 using (var request = new UnityWebRequest(GENRE_ZIP_URL, UnityWebRequest.kHttpVerbGET))
                 {
                     request.SetRequestHeader("User-Agent", "YARG");
+                    // The zip download had no timeout, so a stalled connection
+                    // hung the loading screen forever with no progress bar.
+                    // 30 s is generous for this small file; on timeout the
+                    // download fails gracefully and the game continues
+                    // without updated genre mappings.
+                    request.timeout = 30;
                     request.downloadHandler = new DownloadHandlerFile(zipPath);
                     await request.SendWebRequest();
                     if (request.result != UnityWebRequest.Result.Success)
