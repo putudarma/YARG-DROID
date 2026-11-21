@@ -30,12 +30,34 @@ namespace YARG.Input.Touch
     /// and the selected button can be resized with the + / - buttons.
     /// Positions and sizes are normalized (0..1 of the screen) and saved to
     /// <c>touchLayout.json</c> next to YARG's <c>settings.json</c>.
+    /// <para>
+    /// NOTE: this is a plain <see cref="MonoBehaviour"/>, deliberately NOT a
+    /// <c>GameplayBehaviour</c>. That base class destroys the object in
+    /// <c>Awake</c> when no GameManager is found yet, and the Gameplay scene
+    /// is loaded additively — so a timing miss meant the touch controls never
+    /// appeared at all (build #15 phone test: no buttons, no EDIT toggle).
+    /// The GameManager is resolved lazily here instead, only when input is
+    /// injected or the pause state is checked.
+    /// </para>
     /// </summary>
-    public class TouchControlsManager : GameplayBehaviour
+    public class TouchControlsManager : MonoBehaviour
     {
         private const float MIN_SCALE = 0.5f;
         private const float MAX_SCALE = 2.0f;
         private const float SCALE_STEP = 1.1f;
+
+        // Lazily resolved: the GameManager is a scene object and may not
+        // exist yet when this manager is created (or ever, outside gameplay).
+        private GameManager _gameManager;
+        private GameManager GameManager
+        {
+            get
+            {
+                if (_gameManager == null)
+                    _gameManager = FindAnyObjectByType<GameManager>();
+                return _gameManager;
+            }
+        }
 
         private Canvas _canvas;
         private RectTransform _canvasRect;
@@ -70,7 +92,7 @@ namespace YARG.Input.Touch
             TouchButtonIds.Strum,
         };
 
-        protected override void GameplayAwake()
+        private void Awake()
         {
             // Keep the screen on during songs (phones love to sleep mid-song).
             if (Application.platform == RuntimePlatform.Android)
@@ -80,7 +102,7 @@ namespace YARG.Input.Touch
             BuildUi();
         }
 
-        protected override void GameplayDestroy()
+        private void OnDestroy()
         {
             SaveLayout();
             if (Application.platform == RuntimePlatform.Android)
@@ -90,8 +112,13 @@ namespace YARG.Input.Touch
         private void Update()
         {
             // Never let the touch buttons sit on top of the pause menu.
+            // (GameManager is null before the song is set up — then there is
+            // no pause menu either, so keep the canvas visible.)
             if (_canvas != null)
-                _canvas.enabled = !GameManager.Paused;
+            {
+                var gm = GameManager;
+                _canvas.enabled = gm == null || !gm.Paused;
+            }
         }
 
         // ------------------------------------------------------------------
@@ -106,7 +133,11 @@ namespace YARG.Input.Touch
             canvasObject.transform.SetParent(transform, false);
             _canvas = canvasObject.AddComponent<Canvas>();
             _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            _canvas.sortingOrder = 5;
+            // Well above the game's own HUD canvases (sortingOrder 0) so the
+            // buttons — and the EDIT toggle — are never hidden behind the
+            // score box or other HUD elements. The canvas is hidden while
+            // paused (see Update), so the pause menu stays reachable.
+            _canvas.sortingOrder = 100;
             _canvasRect = canvasObject.GetComponent<RectTransform>();
             canvasObject.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             canvasObject.AddComponent<GraphicRaycaster>();
@@ -197,11 +228,11 @@ namespace YARG.Input.Touch
 
         private void ApplyLayoutToButtons()
         {
-            float width = _canvasRect.rect.width;
-            float height = _canvasRect.rect.height;
-            if (width <= 0f || height <= 0f)
-                return;
-
+            // Anchor-based: the button rect is fully determined by its
+            // anchors, so it is correctly sized even when the canvas has not
+            // laid out yet (its rect is 0x0 during Awake, which made the old
+            // pixel-based version bail out and leave the buttons zero-sized
+            // forever — the reason no touch controls showed in build #15).
             foreach (var button in _buttons)
             {
                 var entry = _layout.GetButton(button.ButtonId);
@@ -209,26 +240,23 @@ namespace YARG.Input.Touch
                     continue;
 
                 var rect = button.RectTransform;
-                rect.anchorMin = new Vector2(0.5f, 0.5f);
-                rect.anchorMax = new Vector2(0.5f, 0.5f);
-                rect.sizeDelta = new Vector2(entry.Width * width, entry.Height * height);
-                rect.anchoredPosition = new Vector2(
-                    (entry.CenterX - 0.5f) * width,
-                    (entry.CenterY - 0.5f) * height);
+                float halfW = entry.Width * 0.5f;
+                float halfH = entry.Height * 0.5f;
+                rect.anchorMin = new Vector2(entry.CenterX - halfW, entry.CenterY - halfH);
+                rect.anchorMax = new Vector2(entry.CenterX + halfW, entry.CenterY + halfH);
+                rect.anchoredPosition = Vector2.zero;
+                rect.sizeDelta = Vector2.zero;
                 button.RefreshVisual();
             }
         }
 
         private void SaveLayout()
         {
-            if (_layout == null || _canvasRect == null)
+            if (_layout == null)
                 return;
 
-            float width = _canvasRect.rect.width;
-            float height = _canvasRect.rect.height;
-            if (width <= 0f || height <= 0f)
-                return;
-
+            // Anchors ARE the normalized layout now (see ApplyLayoutToButtons),
+            // so saving reads them directly — no canvas size needed.
             foreach (var button in _buttons)
             {
                 var entry = _layout.GetButton(button.ButtonId);
@@ -236,10 +264,10 @@ namespace YARG.Input.Touch
                     continue;
 
                 var rect = button.RectTransform;
-                entry.CenterX = rect.anchoredPosition.x / width + 0.5f;
-                entry.CenterY = rect.anchoredPosition.y / height + 0.5f;
-                entry.Width = rect.sizeDelta.x / width;
-                entry.Height = rect.sizeDelta.y / height;
+                entry.CenterX = (rect.anchorMin.x + rect.anchorMax.x) * 0.5f;
+                entry.CenterY = (rect.anchorMin.y + rect.anchorMax.y) * 0.5f;
+                entry.Width = rect.anchorMax.x - rect.anchorMin.x;
+                entry.Height = rect.anchorMax.y - rect.anchorMin.y;
             }
 
             _layout.Save();
@@ -319,7 +347,29 @@ namespace YARG.Input.Touch
 
         private void OnButtonDragged(TouchFretButton button, Vector2 localPoint)
         {
-            button.RectTransform.anchoredPosition = localPoint;
+            // localPoint is canvas-local pixels (origin at canvas center).
+            // Convert it to a normalized anchor center; the canvas rect is
+            // valid during a drag (layout has run by then).
+            if (_canvasRect == null)
+                return;
+
+            float width = _canvasRect.rect.width;
+            float height = _canvasRect.rect.height;
+            if (width <= 0f || height <= 0f)
+                return;
+
+            float cx = localPoint.x / width + 0.5f;
+            float cy = localPoint.y / height + 0.5f;
+
+            var rect = button.RectTransform;
+            float halfW = (rect.anchorMax.x - rect.anchorMin.x) * 0.5f;
+            float halfH = (rect.anchorMax.y - rect.anchorMin.y) * 0.5f;
+            cx = Mathf.Clamp(cx, halfW, 1f - halfW);
+            cy = Mathf.Clamp(cy, halfH, 1f - halfH);
+            rect.anchorMin = new Vector2(cx - halfW, cy - halfH);
+            rect.anchorMax = new Vector2(cx + halfW, cy + halfH);
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = Vector2.zero;
         }
 
         // ------------------------------------------------------------------
@@ -358,8 +408,12 @@ namespace YARG.Input.Touch
 
         private ControlBinding ResolveBinding(GuitarAction action)
         {
+            var gm = GameManager;
+            if (gm == null)
+                return null;
+
             // Single-player focus: first human, non-sitting-out five-fret player.
-            foreach (BasePlayer basePlayer in GameManager.Players)
+            foreach (BasePlayer basePlayer in gm.Players)
             {
                 if (basePlayer == null || basePlayer.Player == null)
                     continue;

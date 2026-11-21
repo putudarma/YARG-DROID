@@ -144,7 +144,13 @@ public class StreamingAssetsZipper : IPreprocessBuildWithReport, IPostprocessBui
     {
         Uri baseUri = new Uri(baseDir + Path.DirectorySeparatorChar);
         Uri fileUri = new Uri(file);
-        return Uri.UnescapeDataString(baseUri.MakeRelativeUri(fileUri).ToString())
-            .Replace('/', Path.DirectorySeparatorChar);
+        // ZIP entry names MUST use forward slashes (ZIP spec). The previous
+        // code converted them to Path.DirectorySeparatorChar, which on the
+        // Windows builder produced backslash entries (e.g. lang\en-US.json).
+        // On Android, ZipFile.ExtractToDirectory treats backslash as a plain
+        // filename character, so every subfolder file extracted flat with a
+        // backslash in its name — lang/en-US.json never existed, and ALL UI
+        // text showed raw localization keys (build #15 phone test).
+        return Uri.UnescapeDataString(baseUri.MakeRelativeUri(fileUri).ToString());
     }
 }
